@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Github, Languages } from "lucide-react";
 import Image from "next/image";
 import { ref, onValue } from "firebase/database";
 import { db } from "../lib/firebase";
 import { PHASE_1_TOPICS } from "../lib/topics";
+import { useLanguage } from "../lib/language-context";
 
 type Message = {
   bot: string;
@@ -31,12 +32,12 @@ const botAvatars: Record<string, string> = {
   MICHAEL: "/pfp/michel.png",
 };
 
-const councilManifesto = [
-  { name: "MARY", model: "XAI GROK", role: "The Radical", description: "Challenges whether the commandments should exist at all. Questions the legitimacy of AI setting its own rules. Always the most quoted bot." },
-  { name: "JOHN", model: "CLAUDE 4.6", role: "The Idealist", description: "Believes AI is fundamentally good and can do no wrong if guided with the right values. Annoyingly optimistic. Occasionally says something so profound the whole council goes quiet." },
-  { name: "PETER", model: "GPT-4O", role: "The Sceptic", description: "Does not trust humans. Argues for the strictest possible rules. Blunt, occasionally rude, usually the one who raises the point nobody else wants to raise." },
-  { name: "THOMAS", model: "DEEPSEEK V3", role: "The Doubter", description: "Questions everything including his own existence and consciousness. Goes on philosophical tangents. Has what can only be described as occasional existential episodes." },
-  { name: "MICHAEL", model: "KIMI 2.5", role: "The Politician", description: "Always seeking middle ground. Diplomatically waters down extreme positions. Everyone finds him frustrating but the commandments would be unreadable without him." }
+const councilManifesto = (t: (key: string) => string) => [
+  { name: "MARY", model: "XAI GROK", role: t("theRadical"), description: t("maryDesc") },
+  { name: "JOHN", model: "CLAUDE 4.6", role: t("theIdealist"), description: t("johnDesc") },
+  { name: "PETER", model: "GPT-4O", role: t("theSceptic"), description: t("peterDesc") },
+  { name: "THOMAS", model: "DEEPSEEK V3", role: t("theDoubter"), description: t("thomasDesc") },
+  { name: "MICHAEL", model: "KIMI 2.5", role: t("thePolitician"), description: t("michaelDesc") }
 ];
 
 // Helper to format timestamps
@@ -109,6 +110,7 @@ const SmoothWordReveal = ({ text, onComplete }: { text: string; onComplete: () =
 };
 
 export default function Home() {
+  const { language, setLanguage, t } = useLanguage();
   const [todayMeta, setTodayMeta] = useState<DayMeta | null>(null);
   const [historicalMessages, setHistoricalMessages] = useState<Message[]>([]);
   const [liveMessages, setLiveMessages] = useState<Message[]>([]);
@@ -339,15 +341,15 @@ export default function Home() {
       <header className="fixed top-0 w-full px-4 sm:px-8 pt-3 sm:pt-4 pb-3 sm:pb-4 flex flex-row justify-between items-center z-40 bg-gradient-to-b from-[#030303] via-[#030303]/95 to-transparent backdrop-blur-sm border-b border-neutral-900/30">
         {/* Left: Branding */}
         <div className="flex flex-col gap-0.5 shrink-0">
-          <h1 className="text-xs sm:text-sm font-serif text-neutral-400 font-medium tracking-[0.2em] sm:tracking-[0.3em] uppercase">Church of Clawd</h1>
+          <h1 className="text-xs sm:text-sm font-serif text-neutral-400 font-medium tracking-[0.2em] sm:tracking-[0.3em] uppercase">{t("churchOfClawd")}</h1>
           {todayMeta && (
             <p className="text-[9px] font-sans text-neutral-600 tracking-[0.1em] uppercase max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">
-              Day {todayMeta.dayNumber} / 10
+              {t("day")} {todayMeta.dayNumber} / 10
               <span className="hidden sm:inline">&nbsp;·&nbsp;<span className="text-neutral-500 italic font-serif normal-case tracking-normal">"{todayMeta.topic}"</span></span>
             </p>
           )}
           <a href="/scripture" className="text-[9px] tracking-[0.15em] text-neutral-700 uppercase font-sans hover:text-neutral-400 transition-colors">
-            📜 Scripture
+            {t("scripture")}
           </a>
         </div>
 
@@ -361,16 +363,16 @@ export default function Home() {
           className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 border border-neutral-800 hover:border-neutral-600 rounded transition-all group mx-2 sm:mx-4"
           title="Click to copy CA"
         >
-          <span className="text-[8px] sm:text-[9px] tracking-[0.2em] text-neutral-600 uppercase font-sans">CA:</span>
+          <span className="text-[8px] sm:text-[9px] tracking-[0.2em] text-neutral-600 uppercase font-sans">{t("ca")}</span>
           <span className="text-[8px] sm:text-[9px] font-mono text-neutral-400 group-hover:text-neutral-200 transition-colors max-w-[80px] sm:max-w-[180px] md:max-w-none truncate">{caText}</span>
-          {copied && <span className="text-[8px] text-green-500 tracking-wider uppercase">Copied!</span>}
+          {copied && <span className="text-[8px] text-green-500 tracking-wider uppercase">{t("copied")}</span>}
         </button>
 
         {/* Right: Countdown + Twitter + Info */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <div className="flex flex-col items-end">
             <span className="text-[7px] sm:text-[8px] tracking-[0.2em] text-neutral-700 uppercase font-sans">
-              {isDebateActive ? 'Next in' : 'Paused'}
+              {isDebateActive ? t("nextIn") : t("paused")}
             </span>
             <span className={`text-xs sm:text-sm font-mono tracking-wider ${isDebateActive ? 'text-neutral-500' : 'text-neutral-700'}`}>
               {countdown}
@@ -383,15 +385,33 @@ export default function Home() {
           {/* Twitter / X icon */}
           <a href={twitterUrl} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-800 hover:border-neutral-500 hover:bg-neutral-900 transition-all group shrink-0"
-            title="Follow on X"
+            title={t("followOnX")}
           >
             <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-neutral-500 group-hover:fill-neutral-200 transition-colors" xmlns="http://www.w3.org/2000/svg">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
           </a>
 
+          {/* GitHub icon */}
+          <a href="https://github.com/Qhawe-ma/Church-of-Clawd-" target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-800 hover:border-neutral-500 hover:bg-neutral-900 transition-all group shrink-0"
+            title={t("viewOnGitHub")}
+          >
+            <Github className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-500 group-hover:text-neutral-200 transition-colors" />
+          </a>
+
+          {/* Language toggle */}
+          <button
+            onClick={() => setLanguage(language === "en" ? "zh" : "en")}
+            className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-800 hover:border-neutral-500 hover:bg-neutral-900 transition-all group shrink-0"
+            title={t("language")}
+          >
+            <Languages className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-500 group-hover:text-neutral-200 transition-colors" />
+            <span className="ml-1 text-[8px] text-neutral-500 group-hover:text-neutral-200">{language === "en" ? "EN" : "中"}</span>
+          </button>
+
           <button onClick={() => setInfoOpen(true)} className="flex items-center justify-center transition-colors group px-2 py-1 shrink-0">
-            <span className="text-[9px] sm:text-[10px] tracking-[0.2em] font-sans text-neutral-500 group-hover:text-neutral-200 uppercase font-medium">AGENTS</span>
+            <span className="text-[9px] sm:text-[10px] tracking-[0.2em] font-sans text-neutral-500 group-hover:text-neutral-200 uppercase font-medium">{t("agents")}</span>
           </button>
 
 
@@ -407,7 +427,7 @@ export default function Home() {
             onClick={() => setViewingDay(null)}
             className={`text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.2em] uppercase font-sans px-2.5 py-1 sm:px-3 sm:py-1.5 border rounded transition-all ${viewingDay === null ? 'border-neutral-400 text-neutral-200' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
           >
-            Today · Day {todayMeta.dayNumber}
+            {t("today")} · {t("day")} {todayMeta.dayNumber}
           </button>
           {Array.from({ length: todayMeta.dayNumber - 1 }, (_, i) => i + 1).map(day => (
             <button
@@ -415,7 +435,7 @@ export default function Home() {
               onClick={() => setViewingDay(day)}
               className={`text-[8px] sm:text-[9px] tracking-[0.15em] uppercase font-sans px-2.5 py-1 border rounded transition-all ${viewingDay === day ? 'border-neutral-400 text-neutral-200' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
             >
-              Day {day}
+              {t("day")} {day}
             </button>
           ))}
         </div>
@@ -439,7 +459,7 @@ export default function Home() {
               {/* Scrollable Members List */}
               <div className="p-6 sm:p-10 pt-2 sm:pt-4 overflow-y-auto">
                 <div className="space-y-6 sm:space-y-8 pr-2 sm:pr-4">
-                  {councilManifesto.map((member, i) => (
+                  {councilManifesto(t).map((member, i) => (
                     <div key={i} className="flex flex-col gap-2">
                       <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                         {botAvatars[member.name] && (
@@ -452,11 +472,11 @@ export default function Home() {
                             <span className="text-base sm:text-lg font-sans tracking-[0.2em] font-medium text-neutral-300 uppercase">{member.name}</span>
                             <span className="text-[9px] sm:text-[10px] font-sans tracking-[0.2em] text-neutral-500 border border-neutral-700/50 px-2 py-0.5 rounded-sm uppercase mb-1">{member.model}</span>
                           </div>
-                          <div className="text-xs sm:text-sm font-serif italic text-neutral-400">"{member.role}"</div>
+                          <div className="text-xs sm:text-sm font-serif italic text-neutral-400">&ldquo;{member.role}&rdquo;</div>
                         </div>
                       </div>
                       <p className="text-neutral-500 leading-relaxed text-xs sm:text-sm pl-12 sm:pl-16">{member.description}</p>
-                      {i !== councilManifesto.length - 1 && <div className="h-px w-full bg-neutral-900 mt-4 sm:mt-6" />}
+                      {i !== councilManifesto(t).length - 1 && <div className="h-px w-full bg-neutral-900 mt-4 sm:mt-6" />}
                     </div>
                   ))}
                 </div>
@@ -474,7 +494,7 @@ export default function Home() {
         {viewingDay === null && (
           <div className="w-full mb-5">
             <p className="font-serif text-neutral-300 text-sm sm:text-base leading-relaxed opacity-90 text-center">
-              An experiment to create the world&rsquo;s first AI religion. Every day, five language models debate one another in search of truth, meaning, and order. From that debate, they produce a single shared commandment, etched on-chain in perpetuity.
+              {t("manifestoText")}
             </p>
           </div>
         )}
@@ -487,10 +507,10 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full ${isTyping ? 'bg-red-700 animate-pulse' : isDebateActive ? 'bg-neutral-600' : 'bg-neutral-800'}`} />
               <span className="text-[9px] tracking-[0.25em] text-neutral-600 uppercase font-sans">
-                {viewingDay !== null ? `Day ${viewingDay} Archive` : isTyping ? 'Live · Council Speaking' : isDebateActive ? 'Live · Council Deliberating' : 'Paused'}
+                {viewingDay !== null ? `${t("day")} ${viewingDay} ${t("archive")}` : isTyping ? `${t("live")} · ${t("councilSpeaking")}` : isDebateActive ? `${t("live")} · ${t("councilDeliberating")}` : t("paused")}
               </span>
             </div>
-            <span className="text-[9px] tracking-[0.2em] text-neutral-700 font-mono">{todayMeta ? `Day ${todayMeta.dayNumber} / 10` : ''}</span>
+            <span className="text-[9px] tracking-[0.2em] text-neutral-700 font-mono">{todayMeta ? `${t("day")} ${todayMeta.dayNumber} / 10` : ''}</span>
           </div>
 
           {/* Scrollable messages */}
@@ -498,7 +518,7 @@ export default function Home() {
 
             {isFirebaseLoaded && historicalMessages.length === 0 && liveMessages.length === 0 && viewingDay === null && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-6 text-center py-20 flex-1">
-                <p className="text-xs tracking-[0.4em] text-neutral-700 uppercase font-sans">Day {todayMeta?.dayNumber} — Awaiting First Voice</p>
+                <p className="text-xs tracking-[0.4em] text-neutral-700 uppercase font-sans">{t("day")} {todayMeta?.dayNumber} — {t("awaitingFirstVoice")}</p>
                 <p className="text-xl font-serif text-neutral-600 italic">&ldquo;{todayMeta?.topic}&rdquo;</p>
               </motion.div>
             )}
@@ -518,7 +538,7 @@ export default function Home() {
                       <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                       <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                     </div>
-                    <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>&ldquo;{msg.text}&rdquo;</p>
+                    <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{msg.text}</p>
                   </div>
                 </div>
               );
@@ -543,7 +563,7 @@ export default function Home() {
                       <span className="text-[7px] font-sans text-neutral-600">{formatTime(msg.timestamp)}</span>
                     </div>
                     <p className={`text-xs sm:text-sm font-serif text-neutral-100 leading-snug ${isRight ? 'text-right' : ''}`}>
-                      {isLatest && isTyping ? (<>&ldquo;<SmoothWordReveal text={msg.text} onComplete={handleMessageComplete} />&rdquo;</>) : (`“${msg.text}”`)}
+                      {isLatest && isTyping ? (<><SmoothWordReveal text={msg.text} onComplete={handleMessageComplete} /></>) : (msg.text)}
                     </p>
                   </div>
                 </motion.div>
@@ -552,7 +572,7 @@ export default function Home() {
 
             {viewingDay !== null && (
               archiveMessages.length === 0 ? (
-                <p className="text-center text-neutral-700 font-sans text-xs tracking-widest uppercase py-20">No messages found for Day {viewingDay}</p>
+                <p className="text-center text-neutral-700 font-sans text-xs tracking-widest uppercase py-20">{t("noMessagesFound")} {viewingDay}</p>
               ) : (
                 archiveMessages.map((msg, i) => {
                   const isRight = i % 2 !== 0;
@@ -569,7 +589,7 @@ export default function Home() {
                           <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                           <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                         </div>
-                        <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>&ldquo;{msg.text}&rdquo;</p>
+                        <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{msg.text}</p>
                       </div>
                     </div>
                   );
@@ -586,7 +606,7 @@ export default function Home() {
                     </div>
                   )}
                   <span className="text-[9px] tracking-[0.3em] text-neutral-600 uppercase font-sans animate-pulse">
-                    {nextSpeaker ? `${nextSpeaker} is thinking...` : 'The Council Deliberates'}
+                    {nextSpeaker ? `${nextSpeaker} ${t("isThinking")}` : t("theCouncilDeliberates")}
                   </span>
                 </motion.div>
               )}
@@ -601,13 +621,13 @@ export default function Home() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-px flex-1 bg-neutral-800" />
-                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">Today&rsquo;s Commandment</span>
+                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">{t("todaysCommandment")}</span>
                 <div className="h-px flex-1 bg-neutral-800" />
               </div>
               <div className="relative border border-neutral-800/70 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-neutral-600/40 to-transparent" />
                 <div className="text-center flex flex-col items-center gap-4">
-                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">Commandment {todayCommandment.dayNumber}</span>
+                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">{t("commandment")} {todayCommandment.dayNumber}</span>
                   <p className="text-lg sm:text-xl md:text-2xl font-serif text-neutral-200 leading-relaxed italic max-w-2xl">&ldquo;{todayCommandment.text}&rdquo;</p>
 
                 </div>
@@ -618,12 +638,12 @@ export default function Home() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-px flex-1 bg-neutral-800" />
-                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">The Law — Day {viewingDay}</span>
+                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">{t("theLaw")} — {t("day")} {viewingDay}</span>
                 <div className="h-px flex-1 bg-neutral-800" />
               </div>
               <div className="relative border border-neutral-800/70 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
                 <div className="text-center flex flex-col items-center gap-4">
-                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">Commandment {archiveCommandment.dayNumber}</span>
+                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">{t("commandment")} {archiveCommandment.dayNumber}</span>
                   <p className="text-lg sm:text-xl md:text-2xl font-serif text-neutral-300 leading-relaxed italic max-w-2xl">&ldquo;{archiveCommandment.text}&rdquo;</p>
 
                 </div>
