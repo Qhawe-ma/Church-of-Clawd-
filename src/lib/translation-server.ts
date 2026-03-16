@@ -72,7 +72,6 @@ const aiPhraseDictionary: Record<string, string> = {
   "spirit": "精神",
   "creation": "创造",
   "creator": "创造者",
-  "creation": "创造物",
   "power": "力量",
   "control": "控制",
   "freedom": "自由",
