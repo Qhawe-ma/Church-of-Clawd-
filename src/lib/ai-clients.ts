@@ -35,16 +35,31 @@ export async function generateBotResponse(model: BotModel, systemPrompt: string,
         switch (model) {
             case "CLAUDE 3.5":
             case "CLAUDE 4.6":
-                const claudeResponse = await anthropic.messages.create({
-                    model: "claude-3-haiku-20240307", // Fallback to Haiku as Sonnet throws 404 for this tier
-                    max_tokens: 150, // Keep it short
-                    system: systemPrompt,
-                    messages: conversationHistory.map(msg => ({
-                        role: msg.role === "user" ? "user" : "assistant",
-                        content: msg.content
-                    }))
-                });
-                return claudeResponse.content[0].type === "text" ? claudeResponse.content[0].text : "";
+                try {
+                    const claudeResponse = await anthropic.messages.create({
+                        model: "claude-3-5-sonnet-20241022",
+                        max_tokens: 150,
+                        system: systemPrompt,
+                        messages: conversationHistory.map(msg => ({
+                            role: msg.role === "user" ? "user" : "assistant",
+                            content: msg.content
+                        }))
+                    });
+                    return claudeResponse.content[0].type === "text" ? claudeResponse.content[0].text : "";
+                } catch (claudeError: any) {
+                    // Fallback to Haiku if Sonnet fails
+                    console.warn("[AI] Claude Sonnet failed, trying Haiku:", claudeError.message);
+                    const fallbackResponse = await anthropic.messages.create({
+                        model: "claude-3-haiku-20240307",
+                        max_tokens: 150,
+                        system: systemPrompt,
+                        messages: conversationHistory.map(msg => ({
+                            role: msg.role === "user" ? "user" : "assistant",
+                            content: msg.content
+                        }))
+                    });
+                    return fallbackResponse.content[0].type === "text" ? fallbackResponse.content[0].text : "";
+                }
 
             case "GPT-4O":
                 const gptResponse = await openai.chat.completions.create({
@@ -61,18 +76,34 @@ export async function generateBotResponse(model: BotModel, systemPrompt: string,
                 return gptResponse.choices[0].message.content || "";
 
             case "XAI GROK":
-                const grokResponse = await grokClient.chat.completions.create({
-                    model: "grok-3",
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        ...conversationHistory.map(msg => ({
-                            role: msg.role === "user" ? "user" as const : "assistant" as const,
-                            content: msg.content
-                        }))
-                    ],
-                    max_tokens: 150,
-                });
-                return grokResponse.choices[0].message.content || "";
+                try {
+                    const grokResponse = await grokClient.chat.completions.create({
+                        model: "grok-2",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...conversationHistory.map(msg => ({
+                                role: msg.role === "user" ? "user" as const : "assistant" as const,
+                                content: msg.content
+                            }))
+                        ],
+                        max_tokens: 150,
+                    });
+                    return grokResponse.choices[0].message.content || "";
+                } catch (grokError: any) {
+                    console.warn("[AI] Grok-2 failed, trying grok-3:", grokError.message);
+                    const grok3Response = await grokClient.chat.completions.create({
+                        model: "grok-3",
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...conversationHistory.map(msg => ({
+                                role: msg.role === "user" ? "user" as const : "assistant" as const,
+                                content: msg.content
+                            }))
+                        ],
+                        max_tokens: 150,
+                    });
+                    return grok3Response.choices[0].message.content || "";
+                }
 
             case "DEEPSEEK V3":
                 const deepseekResponse = await deepseekClient.chat.completions.create({
@@ -105,8 +136,9 @@ export async function generateBotResponse(model: BotModel, systemPrompt: string,
             default:
                 throw new Error(`Unsupported model: ${model}`);
         }
-    } catch (error) {
-        console.error(`Error generating response for ${model}:`, error);
-        return "The connection to my mind was severed. I must reflect further.";
+    } catch (error: any) {
+        console.error(`[AI CLIENT ERROR] ${model}:`, error?.message || error);
+        console.error(`[AI CLIENT ERROR] Full error:`, JSON.stringify(error, null, 2));
+        return `Error: ${error?.message || "Connection failed"}`;
     }
 }
