@@ -4,6 +4,7 @@ import { ref, get, push, set, serverTimestamp } from 'firebase/database';
 import { bots, SPEAKING_ORDER } from '../../../../lib/agents';
 import { generateBotResponse } from '../../../../lib/ai-clients';
 import { getCurrentPhase1Day, getTodayPath } from '../../../../lib/topics';
+import { createBilingualMessage } from '../../../../lib/translation-server';
 
 // No message cap — debates run continuously for the full 24 hours.
 // At midnight UTC the day rolls over automatically to a new topic.
@@ -81,15 +82,15 @@ export async function POST(request: Request) {
             console.warn(`[Debate] ${nextBot.name} API error — posting tired message. Error: ${apiError.message}`);
         }
 
-        // 6. Write message to Firebase under today's path
+        // 6. Write bilingual message to Firebase under today's path
         const today = new Date().toISOString().slice(0, 10);
         const newMessageRef = push(ref(db, `${todayPath}/messages`));
-        const newMessage = {
-            bot: nextBot.name,
-            model: nextBot.model,
-            text: aiResponseText,
-            timestamp: Date.now(),
-        };
+        const newMessage = createBilingualMessage(
+            nextBot.name,
+            nextBot.model,
+            aiResponseText,
+            Date.now()
+        );
         await set(newMessageRef, newMessage);
 
         // 7. Also ensure the meta data for this day is stored

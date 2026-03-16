@@ -13,6 +13,7 @@ type Message = {
   bot: string;
   model: string;
   text: string;
+  textZh?: string;
   timestamp?: number;
 };
 
@@ -40,6 +41,10 @@ const councilManifesto = (t: (key: string) => string) => [
   { name: "MICHAEL", model: "KIMI 2.5", role: t("thePolitician"), description: t("michaelDesc") }
 ];
 
+// Helper to get message text based on language
+const getMessageText = (msg: Message, lang: string): string => {
+  return lang === "zh" && msg.textZh ? msg.textZh : msg.text;
+};
 // Helper to format timestamps
 const formatTime = (ts?: number) => {
   if (!ts) return "JUST NOW";
@@ -110,7 +115,7 @@ const SmoothWordReveal = ({ text, onComplete }: { text: string; onComplete: () =
 };
 
 export default function Home() {
-  const { language, setLanguage, t, translateMessage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [todayMeta, setTodayMeta] = useState<DayMeta | null>(null);
   const [historicalMessages, setHistoricalMessages] = useState<Message[]>([]);
   const [liveMessages, setLiveMessages] = useState<Message[]>([]);
@@ -541,7 +546,7 @@ export default function Home() {
                       <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                       <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                     </div>
-                    <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{translateMessage(msg.text)}</p>
+                    <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{getMessageText(msg, language)}</p>
                   </div>
                 </div>
               );
@@ -566,7 +571,7 @@ export default function Home() {
                       <span className="text-[7px] font-sans text-neutral-600">{formatTime(msg.timestamp)}</span>
                     </div>
                     <p className={`text-xs sm:text-sm font-serif text-neutral-100 leading-snug ${isRight ? 'text-right' : ''}`}>
-                      {isLatest && isTyping ? (<><SmoothWordReveal text={translateMessage(msg.text)} onComplete={handleMessageComplete} /></>) : (translateMessage(msg.text))}
+                      {isLatest && isTyping ? (<><SmoothWordReveal text={getMessageText(msg, language)} onComplete={handleMessageComplete} /></>) : (getMessageText(msg, language))}
                     </p>
                   </div>
                 </motion.div>
@@ -592,7 +597,7 @@ export default function Home() {
                           <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                           <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                         </div>
-                        <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{translateMessage(msg.text)}</p>
+                        <p className={`text-xs sm:text-sm font-serif text-neutral-400 leading-snug ${isRight ? 'text-right' : ''}`}>{getMessageText(msg, language)}</p>
                       </div>
                     </div>
                   );
