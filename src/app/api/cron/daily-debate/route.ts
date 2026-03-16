@@ -4,7 +4,7 @@ import { ref, get, push, set, serverTimestamp } from 'firebase/database';
 import { bots, SPEAKING_ORDER } from '../../../../lib/agents';
 import { generateBotResponse } from '../../../../lib/ai-clients';
 import { getCurrentPhase1Day, getTodayPath } from '../../../../lib/topics';
-import { createBilingualMessage } from '../../../../lib/translation-server';
+import { createBilingualMessage, translateToChinese } from '../../../../lib/translation-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,9 +96,12 @@ export async function POST(request: Request) {
         await set(newMessageRef, newMessage);
 
         // 7. Also ensure the meta data for this day is stored
+        const topicText = isPhase2 ? (data.topic || 'Ongoing AI Ethics Debate') : topic;
+        const topicZh = await translateToChinese(topicText || '');
         await set(ref(db, `${todayPath}/meta`), {
             dayNumber: dayNumber + 1,
-            topic: isPhase2 ? (data.topic || 'Ongoing AI Ethics Debate') : topic,
+            topic: topicText,
+            topicZh: topicZh || topicText,
             date: today,
             isPhase2,
         });
