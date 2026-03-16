@@ -1,0 +1,23 @@
+﻿[dotenv@17.3.1] injecting env (13) from .env.local -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+[Anthropic (Claude-3.5-Sonnet)] Testing...
+[Anthropic (Claude-3.5-Sonnet)] FAILED
+[Anthropic (Claude-3-Haiku - fallback)] Testing...
+[Anthropic (Claude-3-Haiku - fallback)] OK
+[OpenAI (GPT-4o)] Testing...
+[OpenAI (GPT-4o)] OK
+[xAI (Grok-2)] Testing...
+[xAI (Grok-2)] FAILED
+[DeepSeek] Testing...
+[DeepSeek] OK
+[Moonshot (Kimi)] Testing...
+[Moonshot (Kimi)] FAILED
+
+--- RESULTS ---
+Anthropic (Claude-3.5-Sonnet): ERROR: 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"},"request_id":"req_011CYoRPhbgRmPTJaacgkbQz"}
+Anthropic (Claude-3-Haiku - fallback): SUCCESS: Hello! How can I assist you today?
+OpenAI (GPT-4o): SUCCESS: Hello! How can I assist you today?
+xAI (Grok-2): ERROR: 404 "The model grok-2 does not exist or your team 0939eaa0-0054-429c-9438-48a9e76596f4 does not have access to it. Please ensure you're using the correct API key. If you believe this is a mistake, please contact support and quote your team ID and the model name."
+DeepSeek: SUCCESS: Σ╜áσÑ╜∩╝ü≡ƒæï σ╛êΘ½ÿσà┤Φºüσê░Σ╜á∩╝ü
+
+µêæµÿ»
+Moonshot (Kimi): ERROR: 401 Invalid Authentication

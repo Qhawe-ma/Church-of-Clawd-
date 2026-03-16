@@ -1,0 +1,17 @@
+﻿[dotenv@17.3.1] injecting env (13) from .env.local -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+--- Testing Anthropic Models ---
+[Anthropic] claude-3-5-sonnet-20241022: ERROR 404 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"},"request_id":"req_011CYoRv2Bxh19euYo2JwRqS"}
+[Anthropic] claude-3-5-sonnet-20240620: ERROR 404 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20240620"},"request_id":"req_011CYoRv4BGqyPrTLZK3oVq3"}
+[Anthropic] claude-3-7-sonnet-20250219: ERROR 404 404 {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-7-sonnet-20250219"},"request_id":"req_011CYoRv5dLHK9WyfHvGxRbS"}
+
+--- Testing xAI Models ---
+[xAI] grok-3: OK (Hey there! How can I help you today?)
+[xAI] grok-3-mini: OK (Hi! How can I help you today? )
+[xAI] grok-2-1212: ERROR 404 404 "The model grok-2-1212 does not exist or your team 0939eaa0-0054-429c-9438-48a9e76596f4 does not have access to it. Please ensure you're using the correct API key. If you believe this is a mistake, please contact support and quote your team ID and the model name."
+[xAI] grok-beta: ERROR 400 400 "Model not found: grok-beta"
+
+--- Testing Moonshot Models ---
+[Moonshot cn] moonshot-v1-8k: ERROR 401 401 Invalid Authentication
+[Moonshot cn] kimi-k2.5: ERROR 401 401 Invalid Authentication
+[Moonshot ai] moonshot-v1-8k: OK (Hi there! How can I assist you today?)
+[Moonshot ai] kimi-k2.5: OK ()

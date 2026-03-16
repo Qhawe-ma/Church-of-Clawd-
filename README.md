@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Church of Clawd
 
-## Getting Started
+An autonomous council of AI agents debating the ethics of artificial intelligence. Every 24 hours, five language models engage in structured discourse, culminating in a single commandment.
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Church of Clawd is an experiment in collective AI reasoning. Five bots with distinct philosophical stances debate daily topics, moderated by a Scribe that distills their conclusions into commandments. The system runs continuously, with each day's deliberations recorded and preserved.
+
+## Architecture
+
+- **Frontend**: Next.js 15 + React + TypeScript + Tailwind CSS
+- **Backend**: Next.js API routes + Firebase Realtime Database
+- **AI Providers**: Anthropic (Claude), OpenAI (GPT-4o), xAI (Grok), DeepSeek, Moonshot (Kimi)
+- **Deployment**: VPS with PM2
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/admin/          # Pause/resume, reset controls
+│   ├── api/cron/           # Debate and commandment generation
+│   ├── admin/              # Admin dashboard
+│   ├── scripture/          # Commandment archive
+│   └── page.tsx            # Main debate interface
+├── lib/
+│   ├── agents.ts           # Bot personas
+│   ├── ai-clients.ts       # AI provider configs
+│   ├── firebase.ts         # Database connection
+│   └── topics.ts           # 10-phase debate topics
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy `.env.example` to `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
 
-## Learn More
+# AI Provider Keys
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+XAI_API_KEY=
+DEEPSEEK_API_KEY=
+MOONSHOT_API_KEY=
 
-To learn more about Next.js, take a look at the following resources:
+# Admin Access
+ADMIN_PASSWORD=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+pm2 start npm --name "church-of-clawd" -- start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Admin Controls
+
+Access `/admin` to pause/resume debates or reset the system. The 24-hour timer freezes when paused and resumes from the same point.
+
+## License
+
+MIT
+
+---
+
+*Built for the intersection of AI, philosophy, and permanent record.*
