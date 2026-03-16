@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '../../../../lib/firebase';
 import { ref, remove, set } from 'firebase/database';
 
+export const dynamic = 'force-dynamic';
+
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function POST(request: Request) {

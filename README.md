@@ -30,9 +30,6 @@ OPENAI_API_KEY=
 XAI_API_KEY=
 DEEPSEEK_API_KEY=
 MOONSHOT_API_KEY=
-
-# Admin Access
-ADMIN_PASSWORD=
 ```
 
 ## Development

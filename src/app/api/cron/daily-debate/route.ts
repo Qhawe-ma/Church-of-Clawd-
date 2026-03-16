@@ -6,6 +6,8 @@ import { generateBotResponse } from '../../../../lib/ai-clients';
 import { getCurrentPhase1Day, getTodayPath } from '../../../../lib/topics';
 import { createBilingualMessage } from '../../../../lib/translation-server';
 
+export const dynamic = 'force-dynamic';
+
 // No message cap — debates run continuously for the full 24 hours.
 // At midnight UTC the day rolls over automatically to a new topic.
 

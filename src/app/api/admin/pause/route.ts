@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '../../../../lib/firebase';
 import { ref, get, set, remove } from 'firebase/database';
 
+export const dynamic = 'force-dynamic';
+
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const DEFAULT_FOUNDING_DATE = new Date("2026-03-07T00:00:00Z").getTime();
 
