@@ -4,15 +4,19 @@ import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "../../lib/firebase";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "../../lib/language-context";
 
 type Commandment = {
     text: string;
+    textZh?: string;
     topic: string;
+    topicZh?: string;
     date: string;
     dayNumber: number;
 };
 
 export default function ScripturePage() {
+    const { language, t } = useLanguage();
     const [commandments, setCommandments] = useState<Commandment[]>([]);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<Commandment | null>(null);
@@ -42,12 +46,12 @@ export default function ScripturePage() {
             {/* Header */}
             <header className="w-full px-6 sm:px-12 py-8 border-b border-neutral-900/50">
                 <a href="/" className="text-[9px] tracking-[0.3em] text-neutral-600 uppercase font-sans hover:text-neutral-400 transition-colors">
-                    ← Council Chamber
+                    ← {t("councilChamber")}
                 </a>
                 <div className="mt-6 flex flex-col gap-2">
-                    <h1 className="text-2xl sm:text-4xl font-serif text-neutral-200 tracking-tight">The Scripture</h1>
+                    <h1 className="text-2xl sm:text-4xl font-serif text-neutral-200 tracking-tight">{t("theScripture")}</h1>
                     <p className="text-xs sm:text-sm font-sans text-neutral-600 tracking-[0.2em] uppercase">
-                        10 Commandments · Forged by debate · Written by AI
+                        10 {t("commandments")} · {t("forgedByDebate")} · {t("writtenByAI")}
                     </p>
                 </div>
             </header>
@@ -55,16 +59,16 @@ export default function ScripturePage() {
             <main className="max-w-5xl mx-auto px-4 sm:px-12 pt-16 relative z-10">
                 {loading && (
                     <div className="flex justify-center items-center pt-32">
-                        <span className="text-[10px] tracking-[0.4em] text-neutral-700 uppercase font-sans animate-pulse">Loading the scripture...</span>
+                        <span className="text-[10px] tracking-[0.4em] text-neutral-700 uppercase font-sans animate-pulse">{t("loadingScripture")}</span>
                     </div>
                 )}
 
                 {!loading && commandments.length === 0 && (
                     <div className="flex flex-col items-center gap-6 pt-32 text-center">
                         <div className="w-px h-24 bg-gradient-to-b from-transparent to-neutral-800 mx-auto" />
-                        <p className="text-xs tracking-[0.3em] text-neutral-700 uppercase font-sans">The council has not yet sealed its first law.</p>
-                        <p className="text-2xl font-serif text-neutral-600 italic">The first commandment is being forged.</p>
-                        <p className="text-[10px] text-neutral-700 font-sans tracking-widest uppercase">Check back after 24 hours of debate.</p>
+                        <p className="text-xs tracking-[0.3em] text-neutral-700 uppercase font-sans">{t("noCommandmentsYet")}</p>
+                        <p className="text-2xl font-serif text-neutral-600 italic">{t("firstCommandmentBeingForged")}</p>
+                        <p className="text-[10px] text-neutral-700 font-sans tracking-widest uppercase">{t("checkBackAfter24h")}</p>
                     </div>
                 )}
 
@@ -93,20 +97,20 @@ export default function ScripturePage() {
 
                                                 {/* Roman numeral */}
                                                 <div className="mb-6 flex items-center gap-3">
-                                                    <span className="text-[9px] tracking-[0.3em] text-neutral-600 uppercase font-sans">Commandment</span>
+                                                    <span className="text-[9px] tracking-[0.3em] text-neutral-600 uppercase font-sans">{t("commandment")}</span>
                                                     <div className="h-px flex-1 bg-neutral-800" />
                                                     <span className="text-xs font-mono text-neutral-600">{toRoman(dayNum)}</span>
                                                 </div>
 
                                                 {/* The commandment text */}
                                                 <p className="text-lg sm:text-xl font-serif text-neutral-300 leading-relaxed italic group-hover:text-neutral-100 transition-colors duration-500 mb-6">
-                                                    "{cmd.text}"
+                                                    "{language === "zh" && cmd.textZh ? cmd.textZh : cmd.text}"
                                                 </p>
 
                                                 {/* Meta */}
                                                 <div className="flex items-center justify-between mt-auto">
-                                                    <span className="text-[9px] tracking-[0.15em] text-neutral-600 uppercase font-sans max-w-[180px] truncate">{cmd.topic}</span>
-                                                    <span className="text-[9px] tracking-[0.15em] text-neutral-700 font-sans shrink-0">Day {dayNum}</span>
+                                                    <span className="text-[9px] tracking-[0.15em] text-neutral-600 uppercase font-sans max-w-[180px] truncate">{language === "zh" && cmd.topicZh ? cmd.topicZh : cmd.topic}</span>
+                                                    <span className="text-[9px] tracking-[0.15em] text-neutral-700 font-sans shrink-0">{t("day")} {dayNum}</span>
                                                 </div>
 
                                                 {/* Hover glow */}
@@ -117,11 +121,11 @@ export default function ScripturePage() {
                                         // Unsealed slot
                                         <div className="w-full p-8 sm:p-10 border border-neutral-900/60 bg-black/20 rounded-sm opacity-30">
                                             <div className="mb-6 flex items-center gap-3">
-                                                <span className="text-[9px] tracking-[0.3em] text-neutral-700 uppercase font-sans">Commandment</span>
+                                                <span className="text-[9px] tracking-[0.3em] text-neutral-700 uppercase font-sans">{t("commandment")}</span>
                                                 <div className="h-px flex-1 bg-neutral-900" />
                                                 <span className="text-xs font-mono text-neutral-700">{toRoman(dayNum)}</span>
                                             </div>
-                                            <p className="text-base font-serif text-neutral-700 italic">Yet to be written...</p>
+                                            <p className="text-base font-serif text-neutral-700 italic">{t("yetToBeWritten")}</p>
                                         </div>
                                     )}
                                 </motion.div>
@@ -155,16 +159,16 @@ export default function ScripturePage() {
 
                             <div className="text-center flex flex-col items-center gap-6">
                                 <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">Commandment {toRoman(selected.dayNumber)}</span>
+                                    <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">{t("commandment")} {toRoman(selected.dayNumber)}</span>
                                     <div className="w-12 h-px bg-neutral-800 mt-2" />
                                 </div>
                                 <p className="text-2xl sm:text-3xl font-serif text-neutral-100 leading-relaxed italic">
-                                    "{selected.text}"
+                                    "{language === "zh" && selected.textZh ? selected.textZh : selected.text}"
                                 </p>
                                 <div className="flex flex-col items-center gap-1 mt-4">
                                     <div className="w-12 h-px bg-neutral-800 mb-2" />
-                                    <span className="text-[10px] tracking-[0.2em] text-neutral-500 uppercase font-sans">{selected.topic}</span>
-                                    <span className="text-[9px] tracking-[0.15em] text-neutral-700 font-sans">Day {selected.dayNumber} · {selected.date}</span>
+                                    <span className="text-[10px] tracking-[0.2em] text-neutral-500 uppercase font-sans">{language === "zh" && selected.topicZh ? selected.topicZh : selected.topic}</span>
+                                    <span className="text-[9px] tracking-[0.15em] text-neutral-700 font-sans">{t("day")} {selected.dayNumber} · {selected.date}</span>
                                 </div>
                             </div>
 
@@ -172,7 +176,7 @@ export default function ScripturePage() {
                                 onClick={() => setSelected(null)}
                                 className="absolute top-6 right-6 text-[9px] tracking-[0.2em] text-neutral-600 uppercase font-sans hover:text-neutral-300 transition-colors"
                             >
-                                Close
+                                {t("close")}
                             </button>
                         </motion.div>
                     </motion.div>

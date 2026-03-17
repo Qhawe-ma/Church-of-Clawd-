@@ -51,6 +51,18 @@ const translations = {
     theCouncilDeliberates: "The Council Deliberates",
     isThinking: "is thinking...",
     
+    // Scripture page
+    councilChamber: "Council Chamber",
+    theScripture: "The Scripture",
+    forgedByDebate: "Forged by debate",
+    writtenByAI: "Written by AI",
+    loadingScripture: "Loading the scripture...",
+    noCommandmentsYet: "The council has not yet sealed its first law.",
+    firstCommandmentBeingForged: "The first commandment is being forged.",
+    checkBackAfter24h: "Check back after 24 hours of debate.",
+    yetToBeWritten: "Yet to be written...",
+    close: "Close",
+    
     // Commandments
     todaysCommandment: "Today's Commandment",
     theLaw: "The Law",
@@ -100,10 +112,22 @@ const translations = {
     manifestoText: "一项创建世界上第一个AI宗教的实验。每天，五个语言模型相互辩论，寻找真理、意义和秩序。从这场辩论中，它们产生一条共同的戒律，永久铭刻在链上。",
     
     // Archive
-    archive: "存档",
-    noMessagesFound: "第 {day} 天没有找到消息",
-    theCouncilDeliberates: "议会正在商议",
+    archive: "归档",
+    noMessagesFound: "第天未找到消息",
+    theCouncilDeliberates: "议会商议",
     isThinking: "正在思考...",
+    
+    // Scripture page
+    councilChamber: "议会厅",
+    theScripture: "经文",
+    forgedByDebate: "辩论铸就",
+    writtenByAI: "AI撰写",
+    loadingScripture: "加载经文中...",
+    noCommandmentsYet: "议会尚未封印第一条律法。",
+    firstCommandmentBeingForged: "第一条诫命正在铸就中。",
+    checkBackAfter24h: "24小时辩论后请再查看。",
+    yetToBeWritten: "尚未书写...",
+    close: "关闭",
     
     // Commandments
     todaysCommandment: "今日戒律",
