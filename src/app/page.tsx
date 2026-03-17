@@ -290,17 +290,25 @@ export default function Home() {
   const handleMessageComplete = () => setIsTyping(false);
 
   // Auto-trigger background debate every 20 seconds
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     if (isFirebaseLoaded && isDebateActive && !isTyping && viewingDay === null) {
-      intervalId = setInterval(async () => {
+      intervalRef.current = setInterval(async () => {
         try {
           const res = await fetch('/api/cron/daily-debate');
           const data = await res.json();
           if (data.nextSpeaker) setNextSpeaker(data.nextSpeaker);
           if (data.debateComplete || data.debatePaused) {
-            clearInterval(intervalId);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
           }
         } catch (e) {
           console.error("Auto-debate ping failed:", e);
@@ -308,8 +316,13 @@ export default function Home() {
       }, 20000);
     }
 
-    return () => clearInterval(intervalId);
-  }, [isFirebaseLoaded, isTyping, isDebateActive, viewingDay]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isFirebaseLoaded, isDebateActive, viewingDay]); // Removed isTyping from deps
 
   // Load a specific archive day when viewingDay changes
   useEffect(() => {
