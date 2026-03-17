@@ -372,7 +372,7 @@ export default function Home() {
           </a>
         </div>
 
-        {/* Center: CA pill - hidden on mobile */}
+        {/* Center: CA pill - desktop only */}
         <button
           onClick={() => {
             navigator.clipboard.writeText(caText);
@@ -516,6 +516,20 @@ export default function Home() {
       {/* Main Living Document Area */}
       <main ref={mainRef} className="w-full max-w-3xl mx-auto px-3 sm:px-6 flex flex-col items-center relative z-10 transition-opacity duration-1000" style={{ opacity: isFirebaseLoaded ? 1 : 0 }}>
 
+        {/* Mobile CA button - below header */}
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(caText);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="sm:hidden flex items-center gap-2 px-3 py-1.5 mb-4 border border-neutral-800 hover:border-neutral-600 rounded transition-all group"
+          title="Click to copy CA"
+        >
+          <span className="text-[9px] tracking-[0.2em] text-neutral-600 uppercase font-sans">{t("ca")}</span>
+          <span className="text-[9px] font-mono text-neutral-400 group-hover:text-neutral-200 transition-colors max-w-[120px] truncate">{caText}</span>
+          {copied && <span className="text-[8px] text-green-500">✓</span>}
+        </button>
 
         {/* Inline Manifesto — shown above the chat on today's view */}
         {viewingDay === null && (
