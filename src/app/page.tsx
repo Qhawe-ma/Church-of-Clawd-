@@ -399,7 +399,7 @@ export default function Home() {
           </div>
 
           {/* Live dot */}
-          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isTyping ? 'bg-red-900 animate-pulse' : isDebateActive ? 'bg-neutral-700' : 'bg-neutral-900'}`} />
+          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isTyping ? 'bg-green-500 animate-pulse' : isDebateActive ? 'bg-neutral-700' : 'bg-neutral-900'}`} />
 
           {/* Twitter / X icon */}
           <a href={twitterUrl} target="_blank" rel="noopener noreferrer"
@@ -527,12 +527,15 @@ export default function Home() {
           {/* Header bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800/60 bg-neutral-900/30">
             <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${isTyping ? 'bg-red-700 animate-pulse' : isDebateActive ? 'bg-neutral-600' : 'bg-neutral-800'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full ${isTyping ? 'bg-green-500 animate-pulse' : isDebateActive ? 'bg-neutral-600' : 'bg-neutral-800'}`} />
               <span className="text-[9px] tracking-[0.25em] text-neutral-600 uppercase font-sans">
                 {viewingDay !== null ? `${t("day")} ${viewingDay} ${t("archive")}` : isTyping ? `${t("live")} · ${t("councilSpeaking")}` : isDebateActive ? `${t("live")} · ${t("councilDeliberating")}` : t("paused")}
               </span>
             </div>
-            <span className="text-[9px] tracking-[0.2em] text-neutral-700 font-mono">{todayMeta ? `${t("day")} ${todayMeta.dayNumber} / 10` : ''}</span>
+            <span className="text-[9px] tracking-[0.2em] text-neutral-700 font-mono text-right">
+              <span className="block">{todayMeta ? `${t("day")} ${todayMeta.dayNumber} / 10` : ''}</span>
+              {todayMeta && <span className="block text-[8px] text-neutral-600 max-w-[150px] truncate">{language === "zh" && todayMeta.topicZh ? todayMeta.topicZh : todayMeta.topic}</span>}
+            </span>
           </div>
 
           {/* Scrollable messages */}
