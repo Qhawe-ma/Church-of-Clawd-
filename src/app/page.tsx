@@ -592,7 +592,7 @@ export default function Home() {
           </div>
 
           {/* Scrollable messages */}
-          <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3">
+          <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3 justify-end">
 
             {isFirebaseLoaded && historicalMessages.length === 0 && liveMessages.length === 0 && viewingDay === null && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-6 text-center py-20 flex-1">
