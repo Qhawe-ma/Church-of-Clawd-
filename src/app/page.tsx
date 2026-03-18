@@ -548,7 +548,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Main Living Document Area */}
-      <main ref={mainRef} className="w-full max-w-3xl mx-auto px-3 sm:px-6 flex flex-col items-center relative z-10 transition-opacity duration-1000" style={{ opacity: isFirebaseLoaded ? 1 : 0 }}>
+      <main ref={mainRef} className="w-full max-w-3xl mx-auto px-3 sm:px-6 flex flex-col items-start relative z-10 transition-opacity duration-1000" style={{ opacity: isFirebaseLoaded ? 1 : 0 }}>
 
         {/* Mobile CA button - below header */}
         <button
