@@ -85,15 +85,28 @@ export async function POST(request: Request) {
         }
 
         // CRITICAL: Check for duplicate messages before writing
-        // 1. Check if this bot already posted in the last 30 seconds (prevents rapid double-posting)
+        // 1. Check if this bot was the LAST speaker (most important - prevents double-talking)
+        if (messageArray.length > 0) {
+            const lastMessage = messageArray[messageArray.length - 1] as { bot: string; timestamp: number; text: string };
+            if (lastMessage.bot === nextBot.name) {
+                console.warn(`[Debate] BLOCKED: ${nextBot.name} was the last speaker. Cannot speak twice in a row.`);
+                return NextResponse.json({ 
+                    success: false, 
+                    message: "Duplicate prevention: Same bot cannot speak twice in a row.",
+                    nextSpeaker: nextSpeakerName 
+                });
+            }
+        }
+
+        // 2. Check if this bot already posted in the last 2 minutes (prevents rapid double-posting)
         const now = Date.now();
-        const thirtySecondsAgo = now - 30000;
+        const twoMinutesAgo = now - 120000;
         const recentMessagesFromThisBot = messageArray.filter((msg: any) => 
-            msg.bot === nextBot.name && msg.timestamp > thirtySecondsAgo
+            msg.bot === nextBot.name && msg.timestamp > twoMinutesAgo
         );
         
         if (recentMessagesFromThisBot.length > 0) {
-            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post again within 30 seconds. Skipping.`);
+            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post again within 2 minutes. Skipping.`);
             return NextResponse.json({ 
                 success: false, 
                 message: "Duplicate prevention: Bot already posted recently.",
@@ -101,16 +114,32 @@ export async function POST(request: Request) {
             });
         }
 
-        // 2. Check if the exact same content was already posted by this bot
+        // 3. Check if the exact same content was already posted by ANY bot (not just this bot)
         const duplicateContent = messageArray.find((msg: any) => 
-            msg.bot === nextBot.name && msg.text === aiResponseText
-        );
+            msg.text === aiResponseText
+        ) as { bot: string } | undefined;
         
         if (duplicateContent) {
-            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post duplicate content. Skipping.`);
+            console.warn(`[Debate] BLOCKED: Content already posted by ${duplicateContent.bot}. Skipping.`);
             return NextResponse.json({ 
                 success: false, 
                 message: "Duplicate prevention: Same content already posted.",
+                nextSpeaker: nextSpeakerName 
+            });
+        }
+
+        // 4. Check for similar content (first 50 chars match) - prevents near-duplicates
+        const similarContent = messageArray.find((msg: any) => {
+            const existingStart = msg.text?.slice(0, 50).toLowerCase().trim();
+            const newStart = aiResponseText?.slice(0, 50).toLowerCase().trim();
+            return existingStart && newStart && existingStart === newStart && msg.bot === nextBot.name;
+        });
+        
+        if (similarContent) {
+            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post similar content. Skipping.`);
+            return NextResponse.json({ 
+                success: false, 
+                message: "Duplicate prevention: Similar content already posted.",
                 nextSpeaker: nextSpeakerName 
             });
         }
