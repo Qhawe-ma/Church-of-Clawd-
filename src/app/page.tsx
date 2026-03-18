@@ -280,6 +280,13 @@ export default function Home() {
     }
   }, [liveMessages.length, visibleMessages.length, isTyping]);
 
+  // Auto-scroll to bottom when page loads with existing messages
+  useEffect(() => {
+    if ((historicalMessages.length > 0 || liveMessages.length > 0) && viewingDay === null) {
+      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 500);
+    }
+  }, [historicalMessages.length, liveMessages.length, viewingDay]);
+
   // ResizeObserver-based smooth scroll
   useEffect(() => {
     if (!mainRef.current || !scrollRef.current) return;
