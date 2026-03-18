@@ -281,26 +281,46 @@ export default function Home() {
     }
   }, [liveMessages.length, visibleMessages.length, isTyping]);
 
-  // Immediate scroll to bottom on mount
+  // Robust scroll to bottom on mount and when messages change
   useEffect(() => {
-    if (scrollAnchorRef.current) {
-      scrollAnchorRef.current.scrollIntoView({ behavior: "auto", block: "end" });
-    }
+    const scrollToBottom = () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    };
+    
+    // Scroll immediately
+    scrollToBottom();
+    
+    // Scroll again after a short delay to ensure content is rendered
+    setTimeout(scrollToBottom, 100);
+    setTimeout(scrollToBottom, 500);
   }, []);
 
-  // Auto-scroll to bottom when page loads with existing messages
+  // Scroll to bottom when messages change
   useEffect(() => {
     if ((historicalMessages.length > 0 || liveMessages.length > 0) && viewingDay === null) {
-      setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 500);
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 300);
     }
-  }, [historicalMessages.length, liveMessages.length, viewingDay]);
+  }, [historicalMessages.length, liveMessages.length, visibleMessages.length, viewingDay]);
 
   // ResizeObserver-based smooth scroll
   useEffect(() => {
-    if (!mainRef.current || !scrollAnchorRef.current) return;
+    if (!mainRef.current || !scrollRef.current) return;
     let timeoutId: NodeJS.Timeout;
     const observer = new ResizeObserver(() => {
-      if (!infoOpen) { clearTimeout(timeoutId); timeoutId = setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100); }
+      if (!infoOpen) { 
+        clearTimeout(timeoutId); 
+        timeoutId = setTimeout(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          }
+        }, 100); 
+      }
     });
     observer.observe(mainRef.current);
     return () => { observer.disconnect(); clearTimeout(timeoutId); };
@@ -308,7 +328,11 @@ export default function Home() {
 
   useEffect(() => {
     if (!infoOpen && (visibleMessages.length > 0 || historicalMessages.length > 0)) {
-      setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
     }
   }, [visibleMessages, historicalMessages, infoOpen]);
 
@@ -600,7 +624,7 @@ export default function Home() {
           </div>
 
           {/* Scrollable messages */}
-          <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3 flex-col-reverse">
+          <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3">
 
             {isFirebaseLoaded && historicalMessages.length === 0 && liveMessages.length === 0 && viewingDay === null && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-6 text-center py-20 flex-1">
@@ -609,7 +633,7 @@ export default function Home() {
               </motion.div>
             )}
 
-            {viewingDay === null && [...historicalMessages].reverse().map((msg, i) => {
+            {viewingDay === null && historicalMessages.map((msg, i) => {
               const isRight = i % 2 !== 0;
               return (
                 <div key={`hist-${i}`} className={`flex items-start gap-2 w-full ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -630,7 +654,7 @@ export default function Home() {
               );
             })}
 
-            {viewingDay === null && [...visibleMessages].reverse().map((msgIndex) => {
+            {viewingDay === null && visibleMessages.map((msgIndex) => {
               const msg = liveMessages[msgIndex];
               const isLatest = msgIndex === visibleMessages.length - 1;
               const isRight = (historicalMessages.length + msgIndex) % 2 !== 0;
