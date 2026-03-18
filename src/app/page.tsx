@@ -280,6 +280,13 @@ export default function Home() {
     }
   }, [liveMessages.length, visibleMessages.length, isTyping]);
 
+  // Immediate scroll to bottom on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
+
   // Auto-scroll to bottom when page loads with existing messages
   useEffect(() => {
     if ((historicalMessages.length > 0 || liveMessages.length > 0) && viewingDay === null) {
@@ -593,9 +600,6 @@ export default function Home() {
 
           {/* Scrollable messages */}
           <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3">
-            
-            {/* Spacer to push content to bottom */}
-            <div className="flex-1" />
 
             {isFirebaseLoaded && historicalMessages.length === 0 && liveMessages.length === 0 && viewingDay === null && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-6 text-center py-20 flex-1">
