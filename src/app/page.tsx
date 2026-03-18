@@ -155,12 +155,6 @@ export default function Home() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
-  
-  // Track rendered message keys for deduplication within current session
-  const renderedKeys = useRef<Set<string>>(new Set());
-  
-  // Helper to generate unique message key
-  const getMessageKey = (msg: Message): string => `${msg.bot}-${msg.timestamp}-${msg.text?.slice(0, 30)}`;
 
   // Use frozenRemainingMs from Firebase (set when paused) — this is the locked-in remaining time
   const frozenMs = !isDebateActive ? frozenRemainingMs : null;
@@ -212,9 +206,6 @@ export default function Home() {
       const path = isPhase2 ? `discussions/ongoing/${today}` : `discussions/day-${dayNumber + 1}`;
 
       setTodayMeta({ dayNumber: dayNumber + 1, topic, date: today, isPhase2 });
-      
-      // Reset rendered keys when day changes to allow fresh rendering
-      renderedKeys.current.clear();
 
       if (unsubscribeDiscussion) unsubscribeDiscussion();
       if (unsubscribeCommandment) unsubscribeCommandment();
@@ -645,16 +636,9 @@ export default function Home() {
               </motion.div>
             )}
 
-            {viewingDay === null && historicalMessages
-              .filter((msg) => {
-                const key = getMessageKey(msg);
-                if (renderedKeys.current.has(key)) return false;
-                renderedKeys.current.add(key);
-                return true;
-              })
-              .map((msg, i) => {
-                const isRight = i % 2 !== 0;
-                return (
+            {viewingDay === null && historicalMessages.map((msg, i) => {
+              const isRight = i % 2 !== 0;
+              return (
                 <div key={`hist-${i}`} className={`flex items-start gap-2 w-full ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
                   {botAvatars[msg.bot] && (
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-neutral-800 shrink-0 mt-0.5">
@@ -673,19 +657,11 @@ export default function Home() {
               );
             })}
 
-            {viewingDay === null && visibleMessages
-              .filter((msgIndex) => {
-                const msg = liveMessages[msgIndex];
-                const key = getMessageKey(msg);
-                if (renderedKeys.current.has(key)) return false;
-                renderedKeys.current.add(key);
-                return true;
-              })
-              .map((msgIndex) => {
-                const msg = liveMessages[msgIndex];
-                const isLatest = msgIndex === visibleMessages.length - 1;
-                const isRight = (historicalMessages.length + msgIndex) % 2 !== 0;
-                return (
+            {viewingDay === null && visibleMessages.map((msgIndex) => {
+              const msg = liveMessages[msgIndex];
+              const isLatest = msgIndex === visibleMessages.length - 1;
+              const isRight = (historicalMessages.length + msgIndex) % 2 !== 0;
+              return (
                 <motion.div key={msgIndex} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className={`flex items-start gap-2 w-full ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
                   {botAvatars[msg.bot] && (
                     <motion.div initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ duration: 0.3 }}

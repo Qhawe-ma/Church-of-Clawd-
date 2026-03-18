@@ -12,6 +12,9 @@ export const dynamic = 'force-dynamic';
 // At midnight UTC the day rolls over automatically to a new topic.
 
 export async function POST(request: Request) {
+    // Lock release function - declared here so catch block can access it
+    let releaseLock: (() => Promise<void>) | null = null;
+    
     try {
         const { dayNumber, topic, isPhase2 } = await getCurrentPhase1Day();
         const todayPath = await getTodayPath();
@@ -26,6 +29,29 @@ export async function POST(request: Request) {
                 debatePaused: true,
             });
         }
+
+        // 0b. Try to acquire lock - prevents concurrent API calls
+        const lockRef = ref(db, 'config/debateLock');
+        const lockSnapshot = await get(lockRef);
+        if (lockSnapshot.exists() && lockSnapshot.val() === true) {
+            console.warn(`[Debate] BLOCKED: Another debate call is in progress.`);
+            return NextResponse.json({
+                success: false,
+                message: "Debate is currently processing another message. Try again in a few seconds.",
+            });
+        }
+        
+        // Set lock
+        await set(lockRef, true);
+        
+        // Define lock release function
+        releaseLock = async () => {
+            try {
+                await set(lockRef, false);
+            } catch (e) {
+                console.error("Failed to release lock:", e);
+            }
+        };
 
         // 1. Fetch today's existing discussion from Firebase
         const discussionRef = ref(db, todayPath);
@@ -85,9 +111,15 @@ export async function POST(request: Request) {
         }
 
         // CRITICAL: Check for duplicate messages before writing
+        // RE-READ messages to minimize race condition window
+        const freshSnapshot = await get(discussionRef);
+        const freshData = freshSnapshot.val() || {};
+        const freshMessages = freshData.messages ? Object.values(freshData.messages) : [];
+        const freshMessageArray = freshMessages.sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
+        
         // 1. Check if this bot was the LAST speaker (most important - prevents double-talking)
-        if (messageArray.length > 0) {
-            const lastMessage = messageArray[messageArray.length - 1] as { bot: string; timestamp: number; text: string };
+        if (freshMessageArray.length > 0) {
+            const lastMessage = freshMessageArray[freshMessageArray.length - 1] as { bot: string; timestamp: number; text: string };
             if (lastMessage.bot === nextBot.name) {
                 console.warn(`[Debate] BLOCKED: ${nextBot.name} was the last speaker. Cannot speak twice in a row.`);
                 return NextResponse.json({ 
@@ -96,17 +128,31 @@ export async function POST(request: Request) {
                     nextSpeaker: nextSpeakerName 
                 });
             }
+            
+            // 1b. Verify we're following round-robin order
+            const expectedNextIndex = (SPEAKING_ORDER.indexOf(lastMessage.bot) + 1) % SPEAKING_ORDER.length;
+            const expectedNextSpeaker = SPEAKING_ORDER[expectedNextIndex];
+            if (nextBot.name !== expectedNextSpeaker) {
+                console.warn(`[Debate] BLOCKED: Expected ${expectedNextSpeaker} to speak next, but ${nextBot.name} tried to speak.`);
+                await releaseLock?.();
+                return NextResponse.json({ 
+                    success: false, 
+                    message: `Order violation: Expected ${expectedNextSpeaker} to speak, not ${nextBot.name}.`,
+                    nextSpeaker: expectedNextSpeaker 
+                });
+            }
         }
 
-        // 2. Check if this bot already posted in the last 2 minutes (prevents rapid double-posting)
+        // 2. Check if this bot already posted in the last 3 minutes
         const now = Date.now();
-        const twoMinutesAgo = now - 120000;
-        const recentMessagesFromThisBot = messageArray.filter((msg: any) => 
-            msg.bot === nextBot.name && msg.timestamp > twoMinutesAgo
+        const threeMinutesAgo = now - 180000;
+        const recentMessagesFromThisBot = freshMessageArray.filter((msg: any) => 
+            msg.bot === nextBot.name && msg.timestamp > threeMinutesAgo
         );
         
         if (recentMessagesFromThisBot.length > 0) {
-            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post again within 2 minutes. Skipping.`);
+            console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post again within 3 minutes. Skipping.`);
+            await releaseLock?.();
             return NextResponse.json({ 
                 success: false, 
                 message: "Duplicate prevention: Bot already posted recently.",
@@ -114,13 +160,14 @@ export async function POST(request: Request) {
             });
         }
 
-        // 3. Check if the exact same content was already posted by ANY bot (not just this bot)
-        const duplicateContent = messageArray.find((msg: any) => 
+        // 3. Check if the exact same content was already posted by ANY bot
+        const duplicateContent = freshMessageArray.find((msg: any) => 
             msg.text === aiResponseText
         ) as { bot: string } | undefined;
         
         if (duplicateContent) {
             console.warn(`[Debate] BLOCKED: Content already posted by ${duplicateContent.bot}. Skipping.`);
+            await releaseLock?.();
             return NextResponse.json({ 
                 success: false, 
                 message: "Duplicate prevention: Same content already posted.",
@@ -128,15 +175,16 @@ export async function POST(request: Request) {
             });
         }
 
-        // 4. Check for similar content (first 50 chars match) - prevents near-duplicates
-        const similarContent = messageArray.find((msg: any) => {
-            const existingStart = msg.text?.slice(0, 50).toLowerCase().trim();
-            const newStart = aiResponseText?.slice(0, 50).toLowerCase().trim();
+        // 4. Check for similar content (first 100 chars match) - prevents near-duplicates
+        const similarContent = freshMessageArray.find((msg: any) => {
+            const existingStart = msg.text?.slice(0, 100).toLowerCase().trim();
+            const newStart = aiResponseText?.slice(0, 100).toLowerCase().trim();
             return existingStart && newStart && existingStart === newStart && msg.bot === nextBot.name;
         });
         
         if (similarContent) {
             console.warn(`[Debate] BLOCKED: ${nextBot.name} attempted to post similar content. Skipping.`);
+            await releaseLock?.();
             return NextResponse.json({ 
                 success: false, 
                 message: "Duplicate prevention: Similar content already posted.",
@@ -170,10 +218,12 @@ export async function POST(request: Request) {
         const newMessageCount = messageArray.length + 1;
         const nextNextSpeaker = SPEAKING_ORDER[newMessageCount % SPEAKING_ORDER.length];
 
+        await releaseLock?.();
         return NextResponse.json({ success: true, message: newMessage, dayNumber: dayNumber + 1, topic, nextSpeaker: nextNextSpeaker });
 
     } catch (error: any) {
         console.error("Error running debate:", error);
+        await releaseLock?.();
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
