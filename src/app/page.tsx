@@ -391,7 +391,6 @@ export default function Home() {
             <p className="text-[9px] font-sans text-neutral-600 tracking-[0.1em] uppercase max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">
               {t("day")} {todayMeta.dayNumber} / 10
               <span className="sm:inline">&nbsp;·&nbsp;<span className="text-neutral-500 italic font-serif normal-case tracking-normal">"{getTopicText(todayMeta)}"</span></span>
-              <span className="sm:hidden block text-[8px] text-neutral-500 normal-case tracking-normal mt-0.5 truncate">{getTopicText(todayMeta)}</span>
             </p>
           )}
           <a href="/scripture" className="hidden sm:block text-[9px] tracking-[0.15em] text-neutral-700 uppercase font-sans hover:text-neutral-400 transition-colors">
@@ -587,14 +586,6 @@ export default function Home() {
           {/* Scrollable messages */}
           <div ref={scrollRef} className="h-[55vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-5 flex flex-col gap-3">
 
-            {/* Show "Commandments" banner when no commandment exists yet */}
-            {viewingDay === null && !todayCommandment && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 text-center pb-4 border-b border-neutral-800/30">
-                <p className="text-lg tracking-[0.3em] text-neutral-600 uppercase font-sans">{t("commandments")}</p>
-                <p className="text-sm font-serif text-neutral-500 italic">{t("beingForgedInDiscussion")}</p>
-              </motion.div>
-            )}
-
             {isFirebaseLoaded && historicalMessages.length === 0 && liveMessages.length === 0 && viewingDay === null && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center gap-6 text-center py-20 flex-1">
                 <p className="text-xs tracking-[0.4em] text-neutral-700 uppercase font-sans">{t("day")} {todayMeta?.dayNumber} — {t("awaitingFirstVoice")}</p>
@@ -696,6 +687,19 @@ export default function Home() {
 
         {/* Commandment below container */}
         <AnimatePresence>
+          {/* Show "Commandments" banner when no commandment exists yet */}
+          {viewingDay === null && !todayCommandment && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="w-full">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-px flex-1 bg-neutral-800" />
+                <span className="text-lg tracking-[0.3em] text-neutral-600 uppercase font-sans">{t("commandments")}</span>
+                <div className="h-px flex-1 bg-neutral-800" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-serif text-neutral-500 italic">{t("beingForgedInDiscussion")}</p>
+              </div>
+            </motion.div>
+          )}
           {todayCommandment && viewingDay === null && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
