@@ -154,6 +154,7 @@ export default function Home() {
   const [frozenRemainingMs, setFrozenRemainingMs] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   // Use frozenRemainingMs from Firebase (set when paused) — this is the locked-in remaining time
   const frozenMs = !isDebateActive ? frozenRemainingMs : null;
@@ -282,24 +283,24 @@ export default function Home() {
 
   // Immediate scroll to bottom on mount
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollAnchorRef.current) {
+      scrollAnchorRef.current.scrollIntoView({ behavior: "auto", block: "end" });
     }
   }, []);
 
   // Auto-scroll to bottom when page loads with existing messages
   useEffect(() => {
     if ((historicalMessages.length > 0 || liveMessages.length > 0) && viewingDay === null) {
-      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 500);
+      setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 500);
     }
   }, [historicalMessages.length, liveMessages.length, viewingDay]);
 
   // ResizeObserver-based smooth scroll
   useEffect(() => {
-    if (!mainRef.current || !scrollRef.current) return;
+    if (!mainRef.current || !scrollAnchorRef.current) return;
     let timeoutId: NodeJS.Timeout;
     const observer = new ResizeObserver(() => {
-      if (!infoOpen) { clearTimeout(timeoutId); timeoutId = setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100); }
+      if (!infoOpen) { clearTimeout(timeoutId); timeoutId = setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100); }
     });
     observer.observe(mainRef.current);
     return () => { observer.disconnect(); clearTimeout(timeoutId); };
@@ -307,7 +308,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!infoOpen && (visibleMessages.length > 0 || historicalMessages.length > 0)) {
-      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
+      setTimeout(() => scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 100);
     }
   }, [visibleMessages, historicalMessages, infoOpen]);
 
@@ -699,6 +700,9 @@ export default function Home() {
 
           </div>
         </div>
+
+        {/* Scroll anchor at bottom */}
+        <div ref={scrollAnchorRef} />
 
         {/* Commandment below container */}
         <AnimatePresence>
