@@ -156,6 +156,9 @@ export default function Home() {
   const mainRef = useRef<HTMLElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
+  // Client-side cache for archive messages and commandments to avoid reloading
+  const archiveCache = useRef<Map<number, { messages: Message[]; commandment: { text: string; topic: string; dayNumber: number } | null }>>(new Map());
+
   // Use frozenRemainingMs from Firebase (set when paused) — this is the locked-in remaining time
   const frozenMs = !isDebateActive ? frozenRemainingMs : null;
 
@@ -392,15 +395,27 @@ export default function Home() {
     };
   }, [isFirebaseLoaded, isDebateActive, viewingDay]); // Removed isTyping from deps
 
-  // Load a specific archive day when viewingDay changes
+  // Load a specific archive day when viewingDay changes - with client-side caching
   useEffect(() => {
     if (viewingDay === null) { setArchiveMessages([]); setArchiveCommandment(null); return; }
+    
+    // Check cache first
+    const cached = archiveCache.current.get(viewingDay);
+    if (cached) {
+      setArchiveMessages(cached.messages);
+      setArchiveCommandment(cached.commandment);
+      return;
+    }
+    
     const archiveRef = ref(db, `discussions/day-${viewingDay}/messages`);
     const unsub = onValue(archiveRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const msgs = (Object.values(data) as Message[]).sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
         setArchiveMessages(msgs);
+        // Update cache
+        const currentCache = archiveCache.current.get(viewingDay);
+        archiveCache.current.set(viewingDay, { messages: msgs, commandment: currentCache?.commandment || null });
       } else {
         setArchiveMessages([]);
       }
@@ -410,7 +425,11 @@ export default function Home() {
     const unsubCmd = onValue(cmdRef, (snapshot) => {
       if (snapshot.exists()) {
         const c = snapshot.val();
-        setArchiveCommandment({ text: c.text, topic: c.topic, dayNumber: c.dayNumber });
+        const cmd = { text: c.text, topic: c.topic, dayNumber: c.dayNumber };
+        setArchiveCommandment(cmd);
+        // Update cache
+        const currentCache = archiveCache.current.get(viewingDay);
+        archiveCache.current.set(viewingDay, { messages: currentCache?.messages || [], commandment: cmd });
       } else {
         setArchiveCommandment(null);
       }
@@ -419,16 +438,16 @@ export default function Home() {
   }, [viewingDay]);
 
   return (
-    <div className="w-full bg-[#030303] min-h-screen text-neutral-200 selection:bg-neutral-800 pb-96 relative">
+    <div className="w-full bg-darkbg min-h-screen text-neutral-200 selection:bg-neutral-800 pb-96 relative">
       {/* Fixed Ambience */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px] opacity-20" />
       <div className="fixed inset-0 pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,1)]" />
 
       {/* Global Header */}
-      <header className="fixed top-0 w-full px-4 sm:px-8 pt-3 sm:pt-4 pb-3 sm:pb-4 flex flex-row justify-between items-center z-40 bg-gradient-to-b from-[#030303] via-[#030303]/95 to-transparent backdrop-blur-sm border-b border-neutral-900/30">
+      <header className="fixed top-0 w-full px-4 sm:px-8 pt-3 sm:pt-4 pb-3 sm:pb-4 flex flex-row justify-between items-center z-40 bg-gradient-to-b from-darkbg via-darkbg/95 to-transparent backdrop-blur-sm border-b-2 border-bnb">
         {/* Left: Branding */}
         <div className="flex flex-col gap-0.5 shrink-0">
-          <h1 className="text-xs sm:text-sm font-serif text-neutral-400 font-medium tracking-[0.2em] sm:tracking-[0.3em] uppercase">{t("churchOfClawd")}</h1>
+          <h1 className="text-xs sm:text-sm font-serif text-white font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase">RELAIGON</h1>
           {todayMeta && (
             <p className="text-[9px] font-sans text-neutral-600 tracking-[0.1em] uppercase max-w-[120px] sm:max-w-none truncate sm:whitespace-normal">
               {t("day")} {todayMeta.dayNumber} / 10
@@ -452,8 +471,8 @@ export default function Home() {
           title="Click to copy CA"
         >
           <span className="text-[8px] sm:text-[9px] tracking-[0.2em] text-neutral-600 uppercase font-sans">{t("ca")}</span>
-          <span className="text-[8px] sm:text-[9px] font-mono text-neutral-400 group-hover:text-neutral-200 transition-colors max-w-[80px] sm:max-w-[180px] md:max-w-none truncate">{caText}</span>
-          {copied && <span className="text-[8px] text-green-500 tracking-wider uppercase">{t("copied")}</span>}
+          <span className="text-[8px] sm:text-[9px] font-mono text-neutral-400 group-hover:text-bnb transition-colors max-w-[80px] sm:max-w-[180px] md:max-w-none truncate">{caText}</span>
+          {copied && <span className="text-[8px] text-bnb tracking-wider uppercase">{t("copied")}</span>}
         </button>
 
         {/* Right: Countdown + Live dot + Icons */}
@@ -473,14 +492,14 @@ export default function Home() {
           </span>
 
           {/* Live dot */}
-          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isTyping ? 'bg-green-500 animate-pulse' : isDebateActive ? 'bg-neutral-700' : 'bg-neutral-900'}`} />
+          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isTyping ? 'bg-bnb animate-pulse shadow-[0_0_10px_#F3BA2F]' : isDebateActive ? 'bg-neutral-600' : 'bg-neutral-800'}`} />
 
           {/* Twitter / X icon */}
           <a href={twitterUrl} target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-800 hover:border-neutral-500 hover:bg-neutral-900 transition-all group shrink-0"
             title={t("followOnX")}
           >
-            <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-neutral-500 group-hover:fill-neutral-200 transition-colors" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 24 24" className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-neutral-500 group-hover:fill-bnb transition-colors" xmlns="http://www.w3.org/2000/svg">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
             </svg>
           </a>
@@ -500,14 +519,14 @@ export default function Home() {
               onChange={(e) => setLanguage(e.target.value as "en" | "zh")}
               className="appearance-none bg-transparent border border-neutral-800 hover:border-neutral-600 text-neutral-500 text-[9px] tracking-[0.1em] uppercase font-sans px-2 py-1 rounded cursor-pointer focus:outline-none focus:border-neutral-500 transition-colors"
             >
-              <option value="en" className="bg-[#090909] text-neutral-300">EN</option>
-              <option value="zh" className="bg-[#090909] text-neutral-300">中文</option>
+              <option value="en" className="bg-darkbg text-neutral-300">EN</option>
+              <option value="zh" className="bg-darkbg text-neutral-300">中文</option>
             </select>
             <span className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-600 text-[8px]">▼</span>
           </div>
 
           <button onClick={() => setInfoOpen(true)} className="flex items-center justify-center transition-colors group px-2 py-1 shrink-0">
-            <span className="text-[9px] sm:text-[10px] tracking-[0.2em] font-sans text-neutral-500 group-hover:text-neutral-200 uppercase font-medium">{t("agents")}</span>
+            <span className="text-[9px] sm:text-[10px] tracking-[0.2em] font-sans text-neutral-500 group-hover:text-bnb uppercase font-medium">{t("agents")}</span>
           </button>
 
 
@@ -521,7 +540,7 @@ export default function Home() {
         <div className="flex flex-row items-center gap-2 px-4 sm:px-8 mb-6 flex-wrap">
           <button
             onClick={() => setViewingDay(null)}
-            className={`text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.2em] uppercase font-sans px-2.5 py-1 sm:px-3 sm:py-1.5 border rounded transition-all ${viewingDay === null ? 'border-neutral-400 text-neutral-200' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
+            className={`text-[8px] sm:text-[9px] tracking-[0.15em] sm:tracking-[0.2em] uppercase font-sans px-2.5 py-1 sm:px-3 sm:py-1.5 border rounded transition-all ${viewingDay === null ? 'bg-bnb border-bnb text-darkbg font-bold' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
           >
             {t("today")} · {t("day")} {todayMeta.dayNumber}
           </button>
@@ -529,7 +548,7 @@ export default function Home() {
             <button
               key={day}
               onClick={() => setViewingDay(day)}
-              className={`text-[8px] sm:text-[9px] tracking-[0.15em] uppercase font-sans px-2.5 py-1 border rounded transition-all ${viewingDay === day ? 'border-neutral-400 text-neutral-200' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
+              className={`text-[8px] sm:text-[9px] tracking-[0.15em] uppercase font-sans px-2.5 py-1 border rounded transition-all ${viewingDay === day ? 'bg-bnb border-bnb text-darkbg font-bold' : 'border-neutral-800 text-neutral-600 hover:border-neutral-600 hover:text-neutral-400'}`}
             >
               {t("day")} {day}
             </button>
@@ -541,15 +560,15 @@ export default function Home() {
       <AnimatePresence>
         {infoOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full max-w-2xl bg-[#090909] border border-neutral-800 rounded-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[85vh]">
-              <button onClick={() => setInfoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 rounded-full text-neutral-300 hover:text-white transition-colors p-1.5 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} transition={{ duration: 0.4, ease: "easeOut" }} className="w-full max-w-2xl bg-darkbg border border-neutral-800 rounded-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[85vh]">
+              <button onClick={() => setInfoOpen(false)} className="absolute top-4 right-4 z-10 bg-black/50 rounded-full text-neutral-300 hover:text-bnb transition-colors p-1.5 backdrop-blur-sm">
                 <X className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={1.5} />
               </button>
               
               {/* Banner Header flush with top */}
               <div className="w-full h-32 sm:h-48 relative shrink-0">
-                <Image src="/banner.jpg" alt="Church of Clawd Banner" fill className="object-cover object-center" priority />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#090909] to-transparent" />
+                <Image src="/banner.jpg" alt="RELAIGON Banner" fill className="object-cover object-center" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-darkbg to-transparent" />
               </div>
 
               {/* Scrollable Members List */}
@@ -613,10 +632,10 @@ export default function Home() {
         <div className="w-full border border-neutral-800/80 rounded-2xl bg-neutral-950/40 overflow-hidden mb-8">
 
           {/* Header bar */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800/60 bg-neutral-900/30">
+          <div className="flex items-center justify-between px-5 py-3 border-b-2 border-bnb bg-neutral-900/30">
             <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${isTyping ? 'bg-green-500 animate-pulse' : isDebateActive ? 'bg-neutral-600' : 'bg-neutral-800'}`} />
-              <span className="text-[9px] tracking-[0.25em] text-neutral-600 uppercase font-sans">
+              <div className={`w-1.5 h-1.5 rounded-full ${isTyping ? 'bg-bnb animate-pulse' : isDebateActive ? 'bg-neutral-500' : 'bg-neutral-700'}`} />
+              <span className={`text-[9px] tracking-[0.25em] uppercase font-sans font-bold ${viewingDay !== null ? 'text-neutral-600' : isDebateActive ? 'text-bnb' : 'text-neutral-600'}`}>
                 {viewingDay !== null ? `${t("day")} ${viewingDay} ${t("archive")}` : isTyping ? `${t("live")} · ${t("councilSpeaking")}` : isDebateActive ? `${t("live")} · ${t("councilDeliberating")}` : t("paused")}
               </span>
             </div>
@@ -647,7 +666,7 @@ export default function Home() {
                   )}
                   <div className={`flex flex-col min-w-0 bg-neutral-900/50 border border-neutral-800/50 rounded-lg px-3 py-2 max-w-[80%] ${isRight ? 'items-end' : ''}`}>
                     <div className={`flex items-center gap-1.5 mb-1 flex-wrap ${isRight ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[8px] font-sans tracking-[0.15em] font-semibold text-neutral-500 uppercase">{msg.bot}</span>
+                      <span className="text-[8px] font-sans tracking-[0.15em] font-bold text-bnb uppercase">{msg.bot}</span>
                       <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                       <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                     </div>
@@ -671,7 +690,7 @@ export default function Home() {
                   )}
                   <div className={`flex flex-col min-w-0 rounded-lg border px-3 py-2 max-w-[80%] ${isLatest ? 'bg-neutral-900/90 border-neutral-700/60' : 'bg-neutral-900/50 border-neutral-800/40'} ${isRight ? 'items-end' : ''}`}>
                     <div className={`flex items-center gap-1.5 mb-1 flex-wrap ${isRight ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[8px] font-sans tracking-[0.15em] font-semibold text-neutral-300 uppercase">{msg.bot}</span>
+                      <span className="text-[8px] font-sans tracking-[0.15em] font-bold text-bnb uppercase">{msg.bot}</span>
                       <span className="hidden sm:inline text-[7px] font-sans text-neutral-600 uppercase border border-neutral-700 px-1 py-0.5 rounded">{msg.model}</span>
                       <span className="text-[7px] font-sans text-neutral-600">{formatTime(msg.timestamp)}</span>
                     </div>
@@ -698,7 +717,7 @@ export default function Home() {
                       )}
                       <div className={`flex flex-col min-w-0 bg-neutral-900/50 border border-neutral-800/50 rounded-lg px-3 py-2 max-w-[80%] ${isRight ? 'items-end' : ''}`}>
                         <div className={`flex items-center gap-1.5 mb-1 flex-wrap ${isRight ? 'flex-row-reverse' : ''}`}>
-                          <span className="text-[8px] font-sans tracking-[0.15em] font-semibold text-neutral-500 uppercase">{msg.bot}</span>
+                          <span className="text-[8px] font-sans tracking-[0.15em] font-bold text-bnb uppercase">{msg.bot}</span>
                           <span className="hidden sm:inline text-[7px] font-sans text-neutral-700 uppercase border border-neutral-800 px-1 py-0.5 rounded">{msg.model}</span>
                           <span className="text-[7px] font-sans text-neutral-700">{formatTime(msg.timestamp)}</span>
                         </div>
@@ -737,9 +756,9 @@ export default function Home() {
           {viewingDay === null && !todayCommandment && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
-                <div className="h-px flex-1 bg-neutral-800" />
-                <span className="text-lg tracking-[0.3em] text-neutral-600 uppercase font-sans">{t("commandments")}</span>
-                <div className="h-px flex-1 bg-neutral-800" />
+                <div className="h-px flex-1 bg-bnb/40" />
+                <span className="text-lg tracking-[0.3em] text-bnb uppercase font-sans">{t("commandments")}</span>
+                <div className="h-px flex-1 bg-bnb/40" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-serif text-neutral-500 italic">{t("beingForgedInDiscussion")}</p>
@@ -749,15 +768,15 @@ export default function Home() {
           {todayCommandment && viewingDay === null && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
-                <div className="h-px flex-1 bg-neutral-800" />
-                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">{t("todaysCommandment")}</span>
-                <div className="h-px flex-1 bg-neutral-800" />
+                <div className="h-px flex-1 bg-bnb/40" />
+                <span className="text-[9px] tracking-[0.35em] text-bnb uppercase font-sans">{t("todaysCommandment")}</span>
+                <div className="h-px flex-1 bg-bnb/40" />
               </div>
-              <div className="relative border border-neutral-800/70 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-neutral-600/40 to-transparent" />
+              <div className="relative border border-bnb/40 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-bnb/60 to-transparent" />
                 <div className="text-center flex flex-col items-center gap-4">
-                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">{t("commandment")} {todayCommandment.dayNumber}</span>
-                  <p className="text-lg sm:text-xl md:text-2xl font-serif text-neutral-200 leading-relaxed italic max-w-2xl">&ldquo;{todayCommandment.text}&rdquo;</p>
+                  <span className="text-[9px] tracking-[0.4em] text-bnb uppercase font-sans">{t("commandment")} {todayCommandment.dayNumber}</span>
+                  <p className="text-lg sm:text-xl md:text-2xl font-serif text-bnb leading-relaxed italic max-w-2xl">&ldquo;{todayCommandment.text}&rdquo;</p>
 
                 </div>
               </div>
@@ -766,14 +785,14 @@ export default function Home() {
           {archiveCommandment && viewingDay !== null && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
               <div className="flex items-center gap-3 mb-5">
-                <div className="h-px flex-1 bg-neutral-800" />
-                <span className="text-[9px] tracking-[0.35em] text-neutral-600 uppercase font-sans">{t("theLaw")} — {t("day")} {viewingDay}</span>
-                <div className="h-px flex-1 bg-neutral-800" />
+                <div className="h-px flex-1 bg-bnb/40" />
+                <span className="text-[9px] tracking-[0.35em] text-bnb uppercase font-sans">{t("theLaw")} — {t("day")} {viewingDay}</span>
+                <div className="h-px flex-1 bg-bnb/40" />
               </div>
-              <div className="relative border border-neutral-800/70 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
+              <div className="relative border border-bnb/40 bg-neutral-950/60 rounded-2xl px-7 py-8 sm:px-10 sm:py-10">
                 <div className="text-center flex flex-col items-center gap-4">
-                  <span className="text-[9px] tracking-[0.4em] text-neutral-600 uppercase font-sans">{t("commandment")} {archiveCommandment.dayNumber}</span>
-                  <p className="text-lg sm:text-xl md:text-2xl font-serif text-neutral-300 leading-relaxed italic max-w-2xl">&ldquo;{archiveCommandment.text}&rdquo;</p>
+                  <span className="text-[9px] tracking-[0.4em] text-bnb uppercase font-sans">{t("commandment")} {archiveCommandment.dayNumber}</span>
+                  <p className="text-lg sm:text-xl md:text-2xl font-serif text-bnb leading-relaxed italic max-w-2xl">&ldquo;{archiveCommandment.text}&rdquo;</p>
 
                 </div>
               </div>

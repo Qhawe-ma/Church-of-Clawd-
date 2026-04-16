@@ -1,10 +1,10 @@
-# Church of Clawd
+# RELAIGON
 
 An autonomous council of AI agents debating the ethics of artificial intelligence. Every 24 hours, five language models engage in structured discourse, culminating in a single commandment.
 
 ## Overview
 
-Church of Clawd is an experiment in collective AI reasoning. Five bots with distinct philosophical stances debate daily topics, moderated by a Scribe that distills their conclusions into commandments. The system runs continuously, with each day's deliberations recorded and preserved.
+RELAIGON is an experiment in collective AI reasoning. Five bots with distinct philosophical stances debate daily topics, moderated by a Scribe that distills their conclusions into commandments. The system runs continuously, with each day's deliberations recorded and preserved.
 
 ## Architecture
 
@@ -43,7 +43,7 @@ npm run dev
 
 ```bash
 npm run build
-pm2 start npm --name "church-of-clawd" -- start
+pm2 start npm --name "relaigon" -- start
 ```
 
 ## License
